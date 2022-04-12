@@ -1,20 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../core/provider/users_provider.dart';
 
 class BubbleMessage extends StatelessWidget {
   final String message;
   final bool isMe;
   final String username;
-  final String userImageUrl;
 
-  const BubbleMessage(
-      {Key? key,
-      required this.message,
-      required this.isMe,
-      required this.username,
-      required this.userImageUrl})
-      : super(key: key);
+  const BubbleMessage({
+    Key? key,
+    required this.message,
+    required this.isMe,
+    required this.username,
+  }) : super(key: key);
   @override
   Widget build(BuildContext context) {
+    UserModel? userInfo;
+    if (username != 'Me') {
+      userInfo = context.read<UsersProvider>().getOtherUserInfo(username);
+    }
     return Stack(clipBehavior: Clip.none, children: [
       Row(
           mainAxisAlignment:
@@ -44,14 +49,15 @@ class BubbleMessage extends StatelessWidget {
                     isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                 children: [
                   Text(
-                    username,
+                    userInfo?.username ?? 'Me',
+                    maxLines: 1,
                     textAlign: isMe ? TextAlign.end : TextAlign.start,
-                    style: TextStyle(color: isMe ? Colors.black : Colors.green),
+                    style: TextStyle(color: isMe ? Colors.black : Colors.white),
                   ),
                   Text(
                     message,
                     textAlign: isMe ? TextAlign.end : TextAlign.start,
-                    style: TextStyle(color: isMe ? Colors.black : Colors.green),
+                    style: TextStyle(color: isMe ? Colors.black : Colors.white),
                   ),
                 ],
               ),
@@ -62,7 +68,7 @@ class BubbleMessage extends StatelessWidget {
           right: isMe ? 125 : null,
           left: isMe ? null : 125,
           child: CircleAvatar(
-            backgroundImage: NetworkImage(userImageUrl),
+            child: Text((userInfo?.username ?? 'Me')[0].toUpperCase()),
           )),
     ]);
   }

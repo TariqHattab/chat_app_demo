@@ -1,11 +1,8 @@
-import 'dart:io';
-
 import 'package:chat_app_demo/widgets/auth_form.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+
+import '../core/database/firebase_handler.dart';
 
 class AuthScreen extends StatefulWidget {
   @override
@@ -16,9 +13,9 @@ class _AuthScreenState extends State<AuthScreen> {
   final _auth = FirebaseAuth.instance;
   var _isLoading = false;
 
-  void _submitAuthForm(
-      Map userData, File imageFile, bool isLogin, BuildContext ctx) async {
+  void _submitAuthForm(Map userData, bool isLogin, BuildContext ctx) async {
     UserCredential authResult;
+
     try {
       setState(() {
         _isLoading = true;
@@ -33,30 +30,22 @@ class _AuthScreenState extends State<AuthScreen> {
           email: userData['email'],
           password: userData['password'],
         );
+
+        await FirebaseHandler().createUser(authResult, userData);
       }
-      final ref = FirebaseStorage.instance
-          .ref()
-          .child('user_image')
-          .child(authResult.user?.uid ?? '' '.jpg');
+      // final ref = FirebaseStorage.instance
+      //     .ref()
+      //     .child('user_image')
+      //     .child(authResult.user?.uid ?? '' '.jpg');
 
-      await ref.putFile(imageFile);
-      final url = await ref.getDownloadURL();
+      // await ref.putFile(imageFile);
+      // final url = await ref.getDownloadURL();
 
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(authResult.user?.uid)
-          .set({
-        'username': userData['username'],
-        'email': userData['email'],
-        'image_url': url,
-      });
-    } on PlatformException catch (e) {
+    } catch (e) {
       var message = 'An error occured, please check your credentials';
-      if (e.message != null) {
-        message = e.message!;
-      }
+
       ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
-        content: Text(message),
+        content: Text(e.toString()),
         backgroundColor: Theme.of(ctx).errorColor,
       ));
       setState(() {

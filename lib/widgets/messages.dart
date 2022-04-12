@@ -1,37 +1,37 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:chat_app_demo/core/provider/groups_provider.dart';
+import 'package:chat_app_demo/core/provider/messagesProvider.dart';
+import 'package:chat_app_demo/widgets/bubble_message.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class Messages extends StatelessWidget {
+  GroupModel? groupModel;
+  Messages(this.groupModel, {Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-    return StreamBuilder(
-      stream: FirebaseFirestore.instance
-          .collection('chat')
-          .orderBy('createdAt', descending: true)
-          .snapshots(),
-      builder: (ctx, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
-        if (streamSnapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(),
+    final _messagesProvider = context.watch<MessagesProvider>();
+
+    var currentUser = FirebaseAuth.instance.currentUser;
+
+    return _messagesProvider.isLoading
+        ? const CircularProgressIndicator()
+        : ListView.builder(
+            reverse: true,
+            itemCount: _messagesProvider.messages.length,
+            itemBuilder: (ctx, index) {
+              var message = _messagesProvider.messages[index];
+              var isMe = message.sentBy == currentUser?.uid;
+
+              return BubbleMessage(
+                message: message.messageText,
+                isMe: isMe,
+                username: isMe ? 'Me' : message.sentBy.toString(),
+                // userImageUrl: documents?[index].data()?['userImage'],
+                key: ValueKey(message),
+              );
+            },
           );
-        }
-        var docs = streamSnapshot.data?.docs;
-        print(docs);
-        return Container();
-        // return ListView.builder(
-        //   reverse: true,
-        //   itemCount: documents?.length,
-        //   itemBuilder: (ctx, index) => BubbleMessage(
-        //     message: documents?[index].data()?['text'],
-        //     isMe: documents?[index].data()?['userId'] == user?.uid,
-        //     username: documents?[index].data()['username'],
-        //     userImageUrl: documents?[index].data()?['userImage'],
-        //     key: ValueKey(documents?[index].id),
-        //   ),
-        // );
-      },
-    );
   }
 }
